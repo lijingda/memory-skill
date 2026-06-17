@@ -92,6 +92,23 @@ function today() {
   return new Date().toISOString().slice(0, 10);
 }
 
+function setBodySource(command, current, source) {
+  if (current) die(`${command}: use only one body source (--stdin or --file)`);
+  return source;
+}
+
+function readStdinBody(command) {
+  if (process.stdin.isTTY) die(`${command}: --stdin requires redirected or heredoc input`);
+  return fs.readFileSync(0, "utf8");
+}
+
+function readBodySource(command, source) {
+  if (!source) die(`${command}: requires --stdin or --file`);
+  if (source.kind === "stdin") return readStdinBody(command);
+  if (!fs.existsSync(source.path)) die(`${command}: file does not exist: ` + source.path);
+  return fs.readFileSync(source.path, "utf8");
+}
+
 // ---- commands ----
 
 function cmdPath() {
@@ -106,24 +123,24 @@ function cmdAdd(args) {
   let title = "",
     type = "note",
     tags = "",
-    body = null;
+    bodySource = null;
   for (let i = 0; i < args.length; i++) {
     const a = args[i];
     if (a === "--title") title = args[++i];
     else if (a === "--type") type = args[++i];
     else if (a === "--tags") tags = args[++i];
-    else if (a === "--body") {
-      body = args[++i];
-      if (body === undefined) die("add: --body requires a value");
+    else if (a === "--stdin") {
+      bodySource = setBodySource("add", bodySource, { kind: "stdin" });
     } else if (a === "--file") {
       const p = args[++i];
       if (!p) die("add: --file requires a path");
-      if (!fs.existsSync(p)) die("add: file does not exist: " + p);
-      body = fs.readFileSync(p, "utf8");
+      bodySource = setBodySource("add", bodySource, { kind: "file", path: p });
+    } else if (a === "--body") {
+      die("add: --body was removed; use --stdin or --file");
     } else die("add: unknown argument " + a);
   }
   if (!title) die("add: requires --title");
-  if (body === null) die("add: requires --body or --file");
+  let body = readBodySource("add", bodySource);
   body = body.replace(/\s+$/, "");
   const store = ensureStore();
   const file = storeFile(store);
@@ -190,23 +207,23 @@ function cmdSearch(args) {
 
 function cmdUpdate(args) {
   let id = null,
-    body = null;
+    bodySource = null;
   for (let i = 0; i < args.length; i++) {
     const a = args[i];
-    if (a === "--body") {
-      body = args[++i];
-      if (body === undefined) die("update: --body requires a value");
+    if (a === "--stdin") {
+      bodySource = setBodySource("update", bodySource, { kind: "stdin" });
     } else if (a === "--file") {
       const p = args[++i];
       if (!p) die("update: --file requires a path");
-      if (!fs.existsSync(p)) die("update: file does not exist: " + p);
-      body = fs.readFileSync(p, "utf8");
+      bodySource = setBodySource("update", bodySource, { kind: "file", path: p });
+    } else if (a === "--body") {
+      die("update: --body was removed; use --stdin or --file");
     } else if (id === null && /^\d+$/.test(a)) {
       id = parseInt(a, 10);
     } else die("update: unknown argument " + a);
   }
   if (id === null) die("update: requires <id>");
-  if (body === null) die("update: requires --body or --file");
+  let body = readBodySource("update", bodySource);
   body = body.replace(/\s+$/, "");
   const store = ensureStore();
   const file = storeFile(store);
@@ -239,11 +256,11 @@ function help() {
   console.log(`Usage: node scripts/memory.mjs <command>
   path                 Create if needed and print cwd/.agent-memory
   init                 Create a store in cwd
-  add --title "..." [--type T] [--tags a,b] --body "Text" | --file <path>
+  add --title "..." [--type T] [--tags a,b] --stdin | --file <path>
   list                 List all entries (id + title + metadata)
   show <id>            Print one entry body
   search <query>       Search all headers and bodies
-  update <id> --body "Text" | --file <path>
+  update <id> --stdin | --file <path>
   remove <id>`);
 }
 

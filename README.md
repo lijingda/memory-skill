@@ -48,6 +48,27 @@ The bundled script has no third-party dependencies and runs with Node.js:
 node skills/project-memory/scripts/memory.mjs help
 ```
 
+## Body Input
+
+Entry bodies are accepted through `--stdin` or `--file`; there is no `--body`
+mode. This avoids shell escaping surprises when memory includes Markdown, code,
+backticks, `$`, or quotes.
+
+Use `--stdin` for short or moderate entries:
+
+```bash
+node skills/project-memory/scripts/memory.mjs add --title "Current plan path" --type reference --tags docs --stdin <<'EOF'
+The durable planning file is `docs/current-plan.md`; do not replace `$PROJECT_ROOT` before reading it.
+EOF
+```
+
+Use `--file` for longer prepared entries or content that already exists in a
+file:
+
+```bash
+node skills/project-memory/scripts/memory.mjs update 3 --file /tmp/project-memory-entry.md
+```
+
 ## Development
 
 For local development in this repository, use the script from the repo root:
