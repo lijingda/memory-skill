@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-// memory.mjs — 项目级记忆，供 coding agent 使用。
+// memory.mjs — project-memory skill 的项目级记忆脚本，供 coding agent 使用。
 // 存储：<project>/.agent-memory/memory.md（单个 markdown 文件）
 // 作用域：从 process.cwd() 向上找最近的 .agent-memory/。
 // 依赖：仅 Node.js 内置模块。跨平台（Linux/macOS/Windows）。用 `node memory.mjs <cmd>` 运行。

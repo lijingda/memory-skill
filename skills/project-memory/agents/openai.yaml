@@ -1,0 +1,4 @@
+interface:
+  display_name: "Project Memory"
+  short_description: "Project memory for durable agent knowledge"
+  default_prompt: "Use $project-memory to read or update durable project memory."

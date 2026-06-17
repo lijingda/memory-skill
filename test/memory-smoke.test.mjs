@@ -5,8 +5,8 @@ import os from "node:os";
 import path from "node:path";
 
 const root = process.cwd();
-const script = path.join(root, "skills", "memory", "scripts", "memory.mjs");
-const tmp = fs.mkdtempSync(path.join(os.tmpdir(), "memory-skill-"));
+const script = path.join(root, "skills", "project-memory", "scripts", "memory.mjs");
+const tmp = fs.mkdtempSync(path.join(os.tmpdir(), "project-memory-skill-"));
 
 function run(args, options = {}) {
   const result = spawnSync(process.execPath, [script, ...args], {
