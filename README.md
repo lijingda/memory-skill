@@ -1,6 +1,6 @@
 # memory-skill
 
-Project-level durable memory for coding agents.
+A skill for agents lacking project-level memory (e.g., Codex, Cursor).
 
 This repository follows the common Agent Skills shape used by public skill
 collections such as `anthropics/skills`: a repository-level README and one
