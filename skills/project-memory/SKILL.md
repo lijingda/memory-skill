@@ -1,60 +1,72 @@
 ---
 name: project-memory
-description: 项目级记忆，持久化跨会话的、durable 且非显而易见的项目知识——坑点（反直觉、调试很久的）、决策及其原因、非显而易见的约定、个性化命令等。何时 READ：开始干活时读一次；并在记忆可能已掉出工作上下文时主动重读——长 ReAct 循环后、上下文被裁剪/摘要后、或本次会话刚更新过记忆，都重新读。何时 WRITE：仅当学到的东西能合理节省未来某个会话、且并非从代码库/文档显而易见时才写。何时 NOT WRITE：显而易见的信息、一次性任务细节、与现有条目重复的。何时维护：发现某条已过期或与当前代码不符时 update；条目彻底失去意义（如对应代码已删除、决策已被推翻）时 remove。维护前先 search 定位、核对代码再动手，不要凭记忆改记忆。通过本 skill 的 scripts/memory.mjs 读写。
+description: "Project-level memory for durable, non-obvious knowledge that should survive across agent sessions: hard-won gotchas, decisions and their reasons, non-obvious conventions, personalized commands, and similar project facts. Read at the start of work and reread whenever memory may have fallen out of context after long tool loops, context compaction, or recent memory updates. Write only facts that will likely save a future session time and are not obvious from code or docs. Do not write one-off task details, obvious facts, or duplicates. Maintain entries by searching first, checking current code before edits, updating stale entries, and removing entries that are no longer meaningful. Use this skill's scripts/memory.mjs for all reads and writes."
 ---
 
-# Project Memory（项目级）
+# Project Memory
 
-项目级记忆，持久化跨会话的非显而易见的项目知识。它不常驻在上下文里——所以必要时必须**主动重读**，别相信你对上次读到内容的复述。通过本 skill 的 `scripts/memory.mjs` 读写，不要绕过脚本直接编辑记忆文件。
+Project memory stores durable, non-obvious project knowledge across agent sessions. It is not always present in context, so reread it when needed instead of trusting a remembered summary. Use this skill's `scripts/memory.mjs` for all reads and writes; do not edit the memory file directly.
 
-## 何时读
+## When To Read
 
-1. 开始干活时读一次（`node <skill-dir>/scripts/memory.mjs list` → 命中相关的再 `show`）。若 `list` 为空说明当前项目还没启用记忆，需要时直接 `add` 即可创建。
-2. **任何怀疑记忆已不在你当前上下文里的时候，重读**：多轮 ReAct 之后、上下文被裁剪/摘要之后、或本次会话刚 `add`/`update` 过——重新 `list`/`show`，不要凭印象。
+1. Read once at the start of work: run `node <skill-dir>/scripts/memory.mjs list`, then `show` any relevant entries. If `list` is empty, the current project has no memory store yet; create one with `add` when there is something worth remembering.
+2. Reread whenever memory may no longer be in your working context: after long tool or reasoning loops, after context compaction or summarization, or after this session has just added or updated memory. Use `list` and `show` again instead of relying on recall.
 
-## 何时写（核心纪律：默认不写）
+## When To Write
 
-写之前先问自己："未来的 agent 会因为我写了这条而做得更好吗？" 不会就别写。
+Default to not writing. Before adding memory, ask: "Will a future agent be materially better because this exists?" If not, do not write it.
 
-**值得写**：踩过的坑（反直觉的、调试了很久的）、决策 + 原因（为什么选 X 不选 Y）、非显而易见的约定、非显而易见的 build/test/deploy 命令、代码里看不出来的 ownership。
+Worth writing: counterintuitive or time-consuming gotchas, decisions plus their rationale, non-obvious conventions, non-obvious build/test/deploy commands, and ownership or operational facts that are not clear from code.
 
-**不要写**：代码库/文档里显而易见的、只对当前一次性任务有效的、可能下个会话就 flip 的、和已有条目重复的（先 `search`，命中就 `update` 而不是 `add`）。
+Do not write: facts that are obvious from the repository or docs, one-off task details, guesses that may change next session, or duplicates of existing entries. Search first; if an existing entry covers the point, update that entry instead of adding a new one.
 
-## 何时维护
+## When To Maintain
 
-- 发现某条已过期或与当前代码不符 → `update`。
-- 条目彻底失去意义（对应代码已删除、决策已被推翻）→ `remove`。
+- If an entry is stale or conflicts with current code, update it.
+- If an entry is no longer meaningful because the related code was removed or a decision was reversed, remove it.
 
-维护前先 `search` 定位、核对代码再动手。涉及具体文件路径/函数名/flag 的记忆，断言前先 grep 核对——它是某个时刻的观察，不是现状。不要凭记忆改记忆。
+Before maintaining memory, search for the relevant entry and verify the current code or docs. Treat memory as an observation from a point in time, not as guaranteed current truth. Do not update memory from memory alone.
 
-## 怎么用脚本
+## Script Usage
 
-脚本在本 skill 目录下，叫 `scripts/memory.mjs`，用 Node.js 运行：`node <skill-dir>/scripts/memory.mjs <command>`。
+The script is `scripts/memory.mjs` inside this skill directory. Run it with Node.js:
 
-正文通过参数传入，有两种方式，二选一：
-
-- **`--body "正文"`** —— 适合简短、无特殊字符的正文。
-- **`--file <path>`** —— 读文件内容作为正文，适合多行、含引号/反引号/`$`/代码片段等复杂内容（原样读入，无 shell 转义风险）。建议复杂内容先写到临时文件再用 `--file`。
-
-命令：
-
-- `add --title "标题" [--type T] [--tags a,b] --body "正文" | --file <path>`（首次 add 会自动在当前项目创建记忆）
-- `list`（列出所有条目）/ `show <id>`（看某条正文）/ `search <关键词>`
-- `update <id> --body "正文" | --file <path>` / `remove <id>`
-
-参数顺序不限，例如 `--body "..." --title "..."` 也能解析。
-
-## 记忆格式
-
-每条记忆是一段：`## [id] 标题 · 类型 · 标签 · 日期` 做锚点，正文在下面自由发挥。示例：
-
-```
-## [3] subscriptions 表是 append-only · gotcha · db,postgres · 2026-05-02
-最新行 = MAX(version)，不是最新 created_at。用 created_at 取最新订阅会被旧版本污染。
+```bash
+node <skill-dir>/scripts/memory.mjs <command>
 ```
 
-- **id**：创建时自动递增，删除不重排（稳定引用）。
-- **格式约束**：正文里不要写以 `## [数字]` 开头的行（会被脚本误判为新条目头）。需要引用别的条目时，用 `[#3]` 或 `见条目 3` 这类写法。
-- **类型**：建议词 `gotcha / decision / convention / command / reference / note`，不强制，你自主判断。
-- **标签**：逗号分隔，便于 `search`。
-- **日期**：建议带。它不是过期规则，是给你做判断的输入——若一条很久没动、且与当前代码不符，自主 `update` 或 `remove`。
+Pass entry bodies in one of two ways:
+
+- `--body "text"` for short text without complicated shell characters.
+- `--file <path>` for multiline text or content containing quotes, backticks, `$`, or code snippets. The file is read as-is and avoids shell escaping problems.
+
+Commands:
+
+- `add --title "Title" [--type T] [--tags a,b] --body "Text" | --file <path>` creates the memory store on first use.
+- `list` lists entries; `show <id>` prints one entry; `search <query>` searches all entry headers and bodies.
+- `update <id> --body "Text" | --file <path>` replaces an entry body.
+- `remove <id>` deletes an entry.
+
+Argument order is flexible. For example, `--body "..." --title "..."` is valid.
+
+## Memory Format
+
+Each memory entry uses this shape:
+
+```markdown
+## [id] Title · type · tags · date
+Body text goes here.
+```
+
+Example:
+
+```markdown
+## [3] subscriptions table is append-only · gotcha · db,postgres · 2026-05-02
+The latest subscription row is selected by MAX(version), not latest created_at. Using created_at can pick an older version.
+```
+
+- `id` is assigned automatically and is not reused or renumbered after deletion.
+- Do not write body lines that start with `## [number]`; the parser will treat them as new entry headers. Refer to other entries as `[#3]` or `entry 3` instead.
+- Suggested types: `gotcha`, `decision`, `convention`, `command`, `reference`, `note`. Use judgment; the script does not enforce types.
+- Tags are comma-separated and are useful for `search`.
+- Dates are context for judgment, not an expiration rule. If an old entry conflicts with current code, update or remove it.

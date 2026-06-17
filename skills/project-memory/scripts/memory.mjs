@@ -1,19 +1,19 @@
 #!/usr/bin/env node
-// memory.mjs — project-memory skill 的项目级记忆脚本，供 coding agent 使用。
-// 存储：<project>/.agent-memory/memory.md（单个 markdown 文件）
-// 作用域：从 process.cwd() 向上找最近的 .agent-memory/。
-// 依赖：仅 Node.js 内置模块。跨平台（Linux/macOS/Windows）。用 `node memory.mjs <cmd>` 运行。
+// memory.mjs - project-level memory for coding agents.
+// Store: <project>/.agent-memory/memory.md as one Markdown file.
+// Scope: walk up from process.cwd() to find the nearest .agent-memory/.
+// Dependencies: Node.js built-ins only. Cross-platform. Run with `node memory.mjs <cmd>`.
 import fs from "node:fs";
 import path from "node:path";
 
 const STORE_DIR = ".agent-memory";
 const FILE_NAME = "memory.md";
-// 条目头：## [id] title · type · tags · date
+// Entry header: ## [id] title · type · tags · date
 const HEADER_RE = /^## \[(\d+)\] (.*)$/;
 
 const TEMPLATE = `# Memory — <project>
 
-> 项目级记忆，供 coding agent 使用。通过 memory.mjs 读写。只存 durable、非显而易见的事实。
+> Project-level memory for coding agents. Read and write through memory.mjs. Store only durable, non-obvious facts.
 
 `;
 
@@ -22,7 +22,7 @@ function die(msg) {
   process.exit(1);
 }
 
-// 从 cwd 向上查找最近的 store 目录，返回绝对路径或 null
+// Walk up from cwd to find the nearest store directory. Return an absolute path or null.
 function resolveStore() {
   let dir = process.cwd();
   while (true) {
@@ -30,7 +30,7 @@ function resolveStore() {
       return path.join(dir, STORE_DIR);
     }
     const parent = path.dirname(dir);
-    if (parent === dir) return null; // 到达根目录
+    if (parent === dir) return null; // Reached filesystem root.
     dir = parent;
   }
 }
@@ -39,7 +39,7 @@ function storeFile(store) {
   return path.join(store, FILE_NAME);
 }
 
-// 不存在则在 cwd 创建 store，返回 store 路径
+// Create a store in cwd if none exists. Return the store path.
 function ensureStore() {
   let store = resolveStore();
   if (!store) {
@@ -56,7 +56,7 @@ function readContent(file) {
   return fs.readFileSync(file, "utf8");
 }
 
-// 解析全文 → { preamble: string[], entries: [{id,meta,headerLine,body:[]}] }
+// Parse the file into { preamble: string[], entries: [{ id, meta, headerLine, body: [] }] }.
 function parse(content) {
   const lines = content.split(/\r?\n/);
   const preamble = [];
@@ -79,7 +79,7 @@ function parse(content) {
   return { preamble, entries };
 }
 
-// 重新序列化：preamble 收尾去空行，条目之间以空行分隔
+// Serialize with trailing blank lines trimmed from the preamble and one blank line between entries.
 function serialize(preamble, entries) {
   const parts = preamble.slice();
   while (parts.length && parts[parts.length - 1].trim() === "") parts.pop();
@@ -90,7 +90,7 @@ function serialize(preamble, entries) {
     parts.push("", e.headerLine, "");
     if (b.length) parts.push(...b);
   }
-  parts.push(""); // 末尾换行
+  parts.push(""); // Final newline.
   return parts.join("\n");
 }
 
@@ -127,16 +127,16 @@ function cmdAdd(args) {
     else if (a === "--tags") tags = args[++i];
     else if (a === "--body") {
       body = args[++i];
-      if (body === undefined) die("add: --body 需要一个值");
+      if (body === undefined) die("add: --body requires a value");
     } else if (a === "--file") {
       const p = args[++i];
-      if (!p) die("add: --file 需要一个路径");
-      if (!fs.existsSync(p)) die("add: 文件不存在 " + p);
+      if (!p) die("add: --file requires a path");
+      if (!fs.existsSync(p)) die("add: file does not exist: " + p);
       body = fs.readFileSync(p, "utf8");
-    } else die("add: 未知参数 " + a);
+    } else die("add: unknown argument " + a);
   }
-  if (!title) die("add: 需要 --title");
-  if (body === null) die("add: 需要 --body 或 --file");
+  if (!title) die("add: requires --title");
+  if (body === null) die("add: requires --body or --file");
   body = body.replace(/\s+$/, "");
   const store = ensureStore();
   const file = storeFile(store);
@@ -156,7 +156,7 @@ function cmdAdd(args) {
 function cmdList() {
   const store = resolveStore();
   if (!store) {
-    console.log("（此处无 memory store）");
+    console.log("(no memory store here)");
     return;
   }
   const content = readContent(storeFile(store));
@@ -167,14 +167,14 @@ function cmdList() {
 }
 
 function cmdShow(args) {
-  if (!args[0]) die("show: 需要 <id>");
+  if (!args[0]) die("show: requires <id>");
   const id = parseInt(args[0], 10);
   const store = resolveStore();
-  if (!store) die("show: 未启用 store");
+  if (!store) die("show: memory store is not initialized");
   const content = readContent(storeFile(store));
   if (!content) return;
   const e = parse(content).entries.find((x) => x.id === id);
-  if (!e) die("show: 无 #" + id);
+  if (!e) die("show: no entry #" + id);
   console.log(e.headerLine);
   console.log("");
   const body = e.body.slice();
@@ -183,9 +183,9 @@ function cmdShow(args) {
 }
 
 function cmdSearch(args) {
-  if (!args[0]) die("search: 需要 <query>");
+  if (!args[0]) die("search: requires <query>");
   const store = resolveStore();
-  if (!store) die("search: 未启用 store");
+  if (!store) die("search: memory store is not initialized");
   const content = readContent(storeFile(store));
   if (!content) return;
   let re;
@@ -204,7 +204,7 @@ function cmdSearch(args) {
       console.log((m ? "" : "  (#" + curId + ") ") + line);
     }
   }
-  if (!matched) console.log("（无匹配）");
+  if (!matched) console.log("(no matches)");
 }
 
 function cmdUpdate(args) {
@@ -214,57 +214,57 @@ function cmdUpdate(args) {
     const a = args[i];
     if (a === "--body") {
       body = args[++i];
-      if (body === undefined) die("update: --body 需要一个值");
+      if (body === undefined) die("update: --body requires a value");
     } else if (a === "--file") {
       const p = args[++i];
-      if (!p) die("update: --file 需要一个路径");
-      if (!fs.existsSync(p)) die("update: 文件不存在 " + p);
+      if (!p) die("update: --file requires a path");
+      if (!fs.existsSync(p)) die("update: file does not exist: " + p);
       body = fs.readFileSync(p, "utf8");
     } else if (id === null && /^\d+$/.test(a)) {
       id = parseInt(a, 10);
-    } else die("update: 未知参数 " + a);
+    } else die("update: unknown argument " + a);
   }
-  if (id === null) die("update: 需要 <id>");
-  if (body === null) die("update: 需要 --body 或 --file");
+  if (id === null) die("update: requires <id>");
+  if (body === null) die("update: requires --body or --file");
   body = body.replace(/\s+$/, "");
   const store = resolveStore();
-  if (!store) die("update: 未启用 store");
+  if (!store) die("update: memory store is not initialized");
   const file = storeFile(store);
   const content = readContent(file);
-  if (!content) die("update: store 为空");
+  if (!content) die("update: memory store is empty");
   const { preamble, entries } = parse(content);
   const e = entries.find((x) => x.id === id);
-  if (!e) die("update: 无 #" + id);
+  if (!e) die("update: no entry #" + id);
   e.body = body ? body.split(/\r?\n/) : [];
   fs.writeFileSync(file, serialize(preamble, entries), "utf8");
   console.log("updated #" + id);
 }
 
 function cmdRemove(args) {
-  if (!args[0]) die("remove: 需要 <id>");
+  if (!args[0]) die("remove: requires <id>");
   const id = parseInt(args[0], 10);
   const store = resolveStore();
-  if (!store) die("remove: 未启用 store");
+  if (!store) die("remove: memory store is not initialized");
   const file = storeFile(store);
   const content = readContent(file);
-  if (!content) die("remove: store 为空");
+  if (!content) die("remove: memory store is empty");
   const { preamble, entries } = parse(content);
   const idx = entries.findIndex((x) => x.id === id);
-  if (idx === -1) die("remove: 无 #" + id);
+  if (idx === -1) die("remove: no entry #" + id);
   entries.splice(idx, 1);
   fs.writeFileSync(file, serialize(preamble, entries), "utf8");
   console.log("removed #" + id);
 }
 
 function help() {
-  console.log(`用法: node scripts/memory.mjs <command>
-  path                 显示当前生效的 store 路径（none=未启用）
-  init                 在当前目录创建 store
-  add --title "..." [--type T] [--tags a,b] --body "正文" | --file <path>
-  list                 列出所有条目（id + 标题 + 元信息）
-  show <id>            查看某条正文
-  search <query>       全文搜索
-  update <id> --body "正文" | --file <path>
+  console.log(`Usage: node scripts/memory.mjs <command>
+  path                 Print the active store path (none = not initialized)
+  init                 Create a store in the current directory
+  add --title "..." [--type T] [--tags a,b] --body "Text" | --file <path>
+  list                 List all entries (id + title + metadata)
+  show <id>            Print one entry body
+  search <query>       Search all headers and bodies
+  update <id> --body "Text" | --file <path>
   remove <id>`);
 }
 
@@ -301,5 +301,5 @@ switch (cmd) {
     cmdRemove(args);
     break;
   default:
-    die("未知命令: " + cmd + "（用 --help 查看用法）");
+    die("unknown command: " + cmd + " (use --help for usage)");
 }

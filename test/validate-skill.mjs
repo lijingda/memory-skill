@@ -9,13 +9,17 @@ const scriptFile = path.join(skillDir, "scripts", "memory.mjs");
 const agentFile = path.join(skillDir, "agents", "openai.yaml");
 
 const skill = fs.readFileSync(skillFile, "utf8");
+const script = fs.readFileSync(scriptFile, "utf8");
+const cjkPattern = /[\p{Script=Han}]/u;
+
 assert.match(skill, /^---\n[\s\S]+?\n---\n/, "SKILL.md must start with YAML frontmatter");
 assert.match(skill, /^name: project-memory$/m, "SKILL.md must declare the project-memory skill name");
 assert.match(skill, /^description: .+/m, "SKILL.md must include a description");
 assert.ok(fs.existsSync(scriptFile), "memory.mjs must live under skill scripts/");
 assert.ok(fs.existsSync(agentFile), "agents/openai.yaml must exist");
+assert.doesNotMatch(skill, cjkPattern, "SKILL.md must be written in English");
+assert.doesNotMatch(script, cjkPattern, "memory.mjs user-facing text must be written in English");
 
-const script = fs.readFileSync(scriptFile, "utf8");
 assert.match(script, /^#!\/usr\/bin\/env node/, "memory.mjs must be directly executable");
 assert.match(script, /STORE_DIR = "\.agent-memory"/, "memory store directory must remain project-scoped");
 

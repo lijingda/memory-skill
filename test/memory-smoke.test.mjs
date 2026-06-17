@@ -24,6 +24,8 @@ function run(args, options = {}) {
 
 try {
   assert.equal(run(["path"]), "none");
+  assert.equal(run(["list"]), "(no memory store here)");
+  assert.match(run(["help"]), /^Usage: node scripts\/memory\.mjs <command>/);
 
   const storePath = run(["init"]);
   assert.equal(storePath, path.join(fs.realpathSync(tmp), ".agent-memory"));
