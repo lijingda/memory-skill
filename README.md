@@ -38,7 +38,29 @@ node skills/project-memory/scripts/memory.mjs help
 
 ## Install
 
-Install by copying or symlinking `skills/project-memory` into the skills
+Install with the `skills` CLI:
+
+```bash
+npx skills add https://github.com/lijingda/memory-skill --skill project-memory
+```
+
+To preview what the repository exposes before installing:
+
+```bash
+npx skills add https://github.com/lijingda/memory-skill --list
+```
+
+To install specifically for Codex:
+
+```bash
+npx skills add https://github.com/lijingda/memory-skill --skill project-memory --agent codex
+```
+
+The `skills` CLI discovers `skills/project-memory/SKILL.md` directly from this
+GitHub repository. `skills.sh` listing/ranking is driven by anonymous install
+telemetry from that CLI, so there is no separate registration file in this repo.
+
+Manual fallback: copy or symlink `skills/project-memory` into the skills
 directory used by your agent runtime. The folder is self-contained: `SKILL.md`
 contains the agent instructions, `agents/openai.yaml` contains UI metadata, and
 `scripts/memory.mjs` performs all reads and writes.
