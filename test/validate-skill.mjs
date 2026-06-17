@@ -15,6 +15,18 @@ const cjkPattern = /[\p{Script=Han}]/u;
 assert.match(skill, /^---\n[\s\S]+?\n---\n/, "SKILL.md must start with YAML frontmatter");
 assert.match(skill, /^name: project-memory$/m, "SKILL.md must declare the project-memory skill name");
 assert.match(skill, /^description: .+/m, "SKILL.md must include a description");
+const description = skill.match(/^description:\s*(.+)$/m)?.[1] || "";
+assert.match(description, /durable, non-obvious/, "description must describe when project memory is useful");
+assert.doesNotMatch(
+  description,
+  /\.agent-memory|memory\.md|\bcwd\b|working-directory|scripts?\/|memory\.mjs|reads and writes only|creates? .*missing/i,
+  "description must stay focused on trigger criteria, not storage or script implementation details",
+);
+assert.doesNotMatch(
+  skill,
+  /cwd\/\.agent-memory|\.agent-memory\/memory\.md|reads and writes only|creates an empty `cwd/i,
+  "SKILL.md must not expose storage-path implementation details to agents",
+);
 assert.ok(fs.existsSync(scriptFile), "memory.mjs must live under skill scripts/");
 assert.ok(fs.existsSync(agentFile), "agents/openai.yaml must exist");
 assert.doesNotMatch(skill, cjkPattern, "SKILL.md must be written in English");
