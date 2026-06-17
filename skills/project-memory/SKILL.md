@@ -37,19 +37,35 @@ The script is `scripts/memory.mjs` inside this skill directory. Run it with Node
 node <skill-dir>/scripts/memory.mjs <command>
 ```
 
-Pass entry bodies in one of two ways:
+Pass entry bodies in one of two ways. There is intentionally no `--body` mode;
+inline shell arguments are too easy to corrupt when memory contains Markdown,
+code, backticks, `$`, or quotes.
 
-- `--body "text"` for short text without complicated shell characters.
-- `--file <path>` for multiline text or content containing quotes, backticks, `$`, or code snippets. The file is read as-is and avoids shell escaping problems.
+- `--stdin` for short or moderate content. Prefer a single-quoted heredoc so shells do not expand backticks, `$`, or quotes.
+- `--file <path>` for larger prepared content or content that already exists in a file. The file is read as-is.
+
+Recommended `--stdin` pattern:
+
+```bash
+node <skill-dir>/scripts/memory.mjs add --title "Current plan path" --type reference --tags docs --stdin <<'EOF'
+The durable planning file is `docs/current-plan.md`; do not replace `$PROJECT_ROOT` before reading it.
+EOF
+```
+
+Recommended `--file` pattern:
+
+```bash
+node <skill-dir>/scripts/memory.mjs update 3 --file /tmp/project-memory-entry.md
+```
 
 Commands:
 
-- `add --title "Title" [--type T] [--tags a,b] --body "Text" | --file <path>` creates the cwd memory store on first use.
+- `add --title "Title" [--type T] [--tags a,b] --stdin | --file <path>` creates the cwd memory store on first use.
 - `list` lists entries; `show <id>` prints one entry; `search <query>` searches all entry headers and bodies.
-- `update <id> --body "Text" | --file <path>` replaces an entry body.
+- `update <id> --stdin | --file <path>` replaces an entry body.
 - `remove <id>` deletes an entry.
 
-Argument order is flexible. For example, `--body "..." --title "..."` is valid.
+Argument order is flexible. For example, `--stdin --title "..."` is valid.
 
 ## Memory Format
 
