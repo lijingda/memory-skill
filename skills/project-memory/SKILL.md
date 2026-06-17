@@ -1,17 +1,17 @@
 ---
 name: project-memory
-description: "Project-level memory for durable, non-obvious knowledge that should survive across agent sessions: hard-won gotchas, decisions and their reasons, non-obvious conventions, personalized commands, and similar project facts. Before use, ensure the command's cwd is the intended project root; this skill intentionally reads and writes only cwd/.agent-memory/memory.md and creates it there if missing. Read at the start of work and reread whenever memory may have fallen out of context. Write only facts that will likely save a future session time and are not obvious from code or docs. Maintain entries by searching first, checking current code before edits, updating stale entries, and removing obsolete entries. Use this skill's scripts/memory.mjs for all reads and writes."
+description: "Use for project-level memory: durable, non-obvious knowledge that should survive across agent sessions, such as hard-won gotchas, decisions and their reasons, non-obvious conventions, personalized commands, and similar project facts. Read memory at the start of non-trivial project work and when it may have fallen out of context. Write only facts likely to save a future session time after confirming they are not obvious from code or docs. Maintain memory by searching first, verifying current code or docs, updating stale entries, and removing obsolete entries."
 ---
 
 # Project Memory
 
-Project memory stores durable, non-obvious project knowledge across agent sessions. It is not always present in context, so reread it when needed instead of trusting a remembered summary. Use this skill's `scripts/memory.mjs` for all reads and writes; do not edit the memory file directly.
+Project memory stores durable, non-obvious project knowledge across agent sessions. It is not always present in context, so reread it when needed instead of trusting a remembered summary. Use this skill's `scripts/memory.mjs` for all reads and writes; do not bypass the script.
 
-Ensure the command's `cwd` is the intended project root before running the script. The script does not search parent directories. It reads and writes only `cwd/.agent-memory/memory.md`, creating that file in `cwd` if it does not already exist. If the agent runtime already executes commands from the project root, no extra action is needed; if the runtime supports an explicit `cwd` parameter, use that mechanism.
+Run the script from the intended project root. If the agent runtime supports an explicit working-directory parameter, use that mechanism.
 
 ## When To Read
 
-1. With the command's `cwd` set to the intended project root, read once at the start of work: run `node <skill-dir>/scripts/memory.mjs list`, then `show` any relevant entries. If no store exists, `list` creates an empty `cwd/.agent-memory/memory.md` and prints no entries.
+1. From the intended project root, read once at the start of non-trivial work: run `node <skill-dir>/scripts/memory.mjs list`, then `show` any relevant entries. If `list` prints no entries, continue with no extra setup.
 2. Reread whenever memory may no longer be in your working context: after long tool or reasoning loops, after context compaction or summarization, or after this session has just added or updated memory. Use `list` and `show` again instead of relying on recall.
 
 ## When To Write
@@ -31,15 +31,14 @@ Before maintaining memory, search for the relevant entry and verify the current 
 
 ## Script Usage
 
-The script is `scripts/memory.mjs` inside this skill directory. Run it with Node.js and with the command's `cwd` set to the intended project root:
+The script is `scripts/memory.mjs` inside this skill directory. Run it with Node.js from the intended project root:
 
 ```bash
 node <skill-dir>/scripts/memory.mjs <command>
 ```
 
-Pass entry bodies in one of two ways. There is intentionally no `--body` mode;
-inline shell arguments are too easy to corrupt when memory contains Markdown,
-code, backticks, `$`, or quotes.
+Pass entry bodies in one of two ways. Do not pass bodies as shell arguments;
+use `--stdin` or `--file` so Markdown, code, backticks, `$`, and quotes remain intact.
 
 - `--stdin` for short or moderate content. Prefer a single-quoted heredoc so shells do not expand backticks, `$`, or quotes.
 - `--file <path>` for larger prepared content or content that already exists in a file. The file is read as-is.
@@ -60,7 +59,7 @@ node <skill-dir>/scripts/memory.mjs update 3 --file /tmp/project-memory-entry.md
 
 Commands:
 
-- `add --title "Title" [--type T] [--tags a,b] --stdin | --file <path>` creates the cwd memory store on first use.
+- `add --title "Title" [--type T] [--tags a,b] --stdin | --file <path>` creates an entry.
 - `list` lists entries; `show <id>` prints one entry; `search <query>` searches all entry headers and bodies.
 - `update <id> --stdin | --file <path>` replaces an entry body.
 - `remove <id>` deletes an entry.
