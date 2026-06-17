@@ -22,5 +22,6 @@ assert.doesNotMatch(script, cjkPattern, "memory.mjs user-facing text must be wri
 
 assert.match(script, /^#!\/usr\/bin\/env node/, "memory.mjs must be directly executable");
 assert.match(script, /STORE_DIR = "\.agent-memory"/, "memory store directory must remain project-scoped");
+assert.doesNotMatch(script, /function resolveStore|path\.dirname/, "memory.mjs must not search parent directories");
 
 console.log("validate-skill: ok");

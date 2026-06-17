@@ -39,6 +39,8 @@ directory used by your agent runtime.
 `project-memory` teaches an agent when to read, write, update, and remove
 project-level memory entries. Entries are stored per project in
 `.agent-memory/memory.md`; that store is intentionally ignored by git.
+The command's `cwd` determines the project: the script reads and writes only
+`cwd/.agent-memory/memory.md`.
 
 The bundled script has no third-party dependencies and runs with Node.js:
 

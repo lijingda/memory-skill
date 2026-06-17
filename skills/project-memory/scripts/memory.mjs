@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 // memory.mjs - project-level memory for coding agents.
 // Store: <project>/.agent-memory/memory.md as one Markdown file.
-// Scope: walk up from process.cwd() to find the nearest .agent-memory/.
+// Scope: use process.cwd() only. Ensure cwd is the intended project root.
 // Dependencies: Node.js built-ins only. Cross-platform. Run with `node memory.mjs <cmd>`.
 import fs from "node:fs";
 import path from "node:path";
@@ -22,17 +22,8 @@ function die(msg) {
   process.exit(1);
 }
 
-// Walk up from cwd to find the nearest store directory. Return an absolute path or null.
-function resolveStore() {
-  let dir = process.cwd();
-  while (true) {
-    if (fs.existsSync(path.join(dir, STORE_DIR, FILE_NAME))) {
-      return path.join(dir, STORE_DIR);
-    }
-    const parent = path.dirname(dir);
-    if (parent === dir) return null; // Reached filesystem root.
-    dir = parent;
-  }
+function cwdStore() {
+  return path.join(process.cwd(), STORE_DIR);
 }
 
 function storeFile(store) {
@@ -41,11 +32,8 @@ function storeFile(store) {
 
 // Create a store in cwd if none exists. Return the store path.
 function ensureStore() {
-  let store = resolveStore();
-  if (!store) {
-    store = path.join(process.cwd(), STORE_DIR);
-    fs.mkdirSync(store, { recursive: true });
-  }
+  const store = cwdStore();
+  fs.mkdirSync(store, { recursive: true });
   const file = storeFile(store);
   if (!fs.existsSync(file)) fs.writeFileSync(file, TEMPLATE, "utf8");
   return store;
@@ -107,8 +95,7 @@ function today() {
 // ---- commands ----
 
 function cmdPath() {
-  const store = resolveStore();
-  console.log(store ? store : "none");
+  console.log(ensureStore());
 }
 
 function cmdInit() {
@@ -154,11 +141,7 @@ function cmdAdd(args) {
 }
 
 function cmdList() {
-  const store = resolveStore();
-  if (!store) {
-    console.log("(no memory store here)");
-    return;
-  }
+  const store = ensureStore();
   const content = readContent(storeFile(store));
   if (!content) return;
   for (const e of parse(content).entries) {
@@ -169,8 +152,7 @@ function cmdList() {
 function cmdShow(args) {
   if (!args[0]) die("show: requires <id>");
   const id = parseInt(args[0], 10);
-  const store = resolveStore();
-  if (!store) die("show: memory store is not initialized");
+  const store = ensureStore();
   const content = readContent(storeFile(store));
   if (!content) return;
   const e = parse(content).entries.find((x) => x.id === id);
@@ -184,8 +166,7 @@ function cmdShow(args) {
 
 function cmdSearch(args) {
   if (!args[0]) die("search: requires <query>");
-  const store = resolveStore();
-  if (!store) die("search: memory store is not initialized");
+  const store = ensureStore();
   const content = readContent(storeFile(store));
   if (!content) return;
   let re;
@@ -227,8 +208,7 @@ function cmdUpdate(args) {
   if (id === null) die("update: requires <id>");
   if (body === null) die("update: requires --body or --file");
   body = body.replace(/\s+$/, "");
-  const store = resolveStore();
-  if (!store) die("update: memory store is not initialized");
+  const store = ensureStore();
   const file = storeFile(store);
   const content = readContent(file);
   if (!content) die("update: memory store is empty");
@@ -243,8 +223,7 @@ function cmdUpdate(args) {
 function cmdRemove(args) {
   if (!args[0]) die("remove: requires <id>");
   const id = parseInt(args[0], 10);
-  const store = resolveStore();
-  if (!store) die("remove: memory store is not initialized");
+  const store = ensureStore();
   const file = storeFile(store);
   const content = readContent(file);
   if (!content) die("remove: memory store is empty");
@@ -258,8 +237,8 @@ function cmdRemove(args) {
 
 function help() {
   console.log(`Usage: node scripts/memory.mjs <command>
-  path                 Print the active store path (none = not initialized)
-  init                 Create a store in the current directory
+  path                 Create if needed and print cwd/.agent-memory
+  init                 Create a store in cwd
   add --title "..." [--type T] [--tags a,b] --body "Text" | --file <path>
   list                 List all entries (id + title + metadata)
   show <id>            Print one entry body
