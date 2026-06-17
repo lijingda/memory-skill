@@ -1,0 +1,12 @@
+{
+  "name": "memory-skill",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "test": "node test/validate-skill.mjs && node test/memory-smoke.test.mjs"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}
