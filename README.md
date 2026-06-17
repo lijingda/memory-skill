@@ -11,31 +11,6 @@ The skill is intentionally conservative. It tells the agent to read memory at
 the start of work, write only durable and non-obvious facts, update stale entries
 when code proves them wrong, and avoid bypassing the bundled script.
 
-## Structure
-
-```text
-skills/
-  project-memory/
-    SKILL.md
-    agents/openai.yaml
-    scripts/memory.mjs
-test/
-  memory-smoke.test.mjs
-  validate-skill.mjs
-```
-
-## Skill
-
-`skills/project-memory` teaches an agent when to read, write, update, and remove
-project-level memory entries. Entries are stored per project in
-`.agent-memory/memory.md`; that store is intentionally ignored by git.
-
-The script has no third-party dependencies and runs with Node.js:
-
-```bash
-node skills/project-memory/scripts/memory.mjs help
-```
-
 ## Install
 
 Install with the `skills` CLI:
@@ -44,7 +19,7 @@ Install with the `skills` CLI:
 npx skills add https://github.com/lijingda/memory-skill --skill project-memory
 ```
 
-To preview what the repository exposes before installing:
+To list available skills before installing:
 
 ```bash
 npx skills add https://github.com/lijingda/memory-skill --list
@@ -56,14 +31,22 @@ To install specifically for Codex:
 npx skills add https://github.com/lijingda/memory-skill --skill project-memory --agent codex
 ```
 
-The `skills` CLI discovers `skills/project-memory/SKILL.md` directly from this
-GitHub repository. `skills.sh` listing/ranking is driven by anonymous install
-telemetry from that CLI, so there is no separate registration file in this repo.
-
 Manual fallback: copy or symlink `skills/project-memory` into the skills
-directory used by your agent runtime. The folder is self-contained: `SKILL.md`
-contains the agent instructions, `agents/openai.yaml` contains UI metadata, and
-`scripts/memory.mjs` performs all reads and writes.
+directory used by your agent runtime.
+
+## What It Does
+
+`project-memory` teaches an agent when to read, write, update, and remove
+project-level memory entries. Entries are stored per project in
+`.agent-memory/memory.md`; that store is intentionally ignored by git.
+
+The bundled script has no third-party dependencies and runs with Node.js:
+
+```bash
+node skills/project-memory/scripts/memory.mjs help
+```
+
+## Development
 
 For local development in this repository, use the script from the repo root:
 
@@ -71,7 +54,7 @@ For local development in this repository, use the script from the repo root:
 node skills/project-memory/scripts/memory.mjs list
 ```
 
-## Checks
+Run the checks:
 
 ```bash
 npm test
