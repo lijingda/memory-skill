@@ -1,6 +1,6 @@
 ---
 name: project-memory
-description: "Use for project-level memory: durable, non-obvious knowledge that should survive across agent sessions, such as hard-won gotchas, decisions and their reasons, non-obvious conventions, personalized commands, and similar project facts. Read memory at the start of non-trivial project work and when it may have fallen out of context. Write only facts likely to save a future session time after confirming they are not obvious from code or docs. Maintain memory by searching first, verifying current code or docs, updating stale entries, and removing obsolete entries."
+description: "Use for project-level memory: a durable project notebook shared across agent sessions. Read memory before starting work in a project, and read it again whenever it may have fallen out of context. Use it to remember project knowledge that is not merely one-off task state and may help future agents, including facts, decisions, conventions, commands, preferences, gotchas, and operational notes that are not obvious from code or docs. When writing, search first, update existing entries instead of duplicating, remove stale or obsolete entries, and keep entries grounded in observed or verified project context."
 ---
 
 # Project Memory

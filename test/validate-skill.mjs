@@ -16,10 +16,21 @@ assert.match(skill, /^---\n[\s\S]+?\n---\n/, "SKILL.md must start with YAML fron
 assert.match(skill, /^name: project-memory$/m, "SKILL.md must declare the project-memory skill name");
 assert.match(skill, /^description: .+/m, "SKILL.md must include a description");
 const description = skill.match(/^description:\s*(.+)$/m)?.[1] || "";
-assert.match(description, /durable, non-obvious/, "description must describe when project memory is useful");
+assert.match(description, /durable/i, "description must describe durable project memory");
+assert.match(description, /not obvious from code or docs/i, "description must avoid storing obvious facts");
+assert.match(
+  description,
+  /Read memory before starting work in a project/,
+  "description must make project memory a start-of-work habit",
+);
+assert.match(
+  description,
+  /not merely one-off task state/,
+  "description must allow broad durable project knowledge without one-off task details",
+);
 assert.doesNotMatch(
   description,
-  /\.agent-memory|memory\.md|\bcwd\b|working-directory|scripts?\/|memory\.mjs|reads and writes only|creates? .*missing/i,
+  /\.agent-memory|memory\.md|\bcwd\b|working-directory|scripts?\/|memory\.mjs|reads and writes only|creates? .*missing|non-trivial|\bcoding\b|\bdebugging\b|\breviewing\b|\bCI\b|\bPRs?\b/i,
   "description must stay focused on trigger criteria, not storage or script implementation details",
 );
 assert.doesNotMatch(
